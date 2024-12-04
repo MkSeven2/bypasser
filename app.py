@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, render_template_string
 import requests
-pip install flask requests
+python3 -m pip install flask requests
+
 app = Flask(__name__)
 
 # Авторизованные ключи
