@@ -1,9 +1,19 @@
+from flask import Flask, request, jsonify, render_template_string
+import requests
+
+app = Flask(__name__)
+
+# Авторизованные ключи
+AUTHORIZED_KEYS = ["Dias9872", "Otherppl"]
+
+# HTML-шаблон для сайта
+HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html>
 <head>
     <base target="_top">
     <style>
-  body {
+        body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f9;
             color: #333;
@@ -71,8 +81,7 @@
         <p>Enter the URL of the website you want to bypass:</p>
         <input type="url" id="myURL" placeholder="https://example.com">
         <br>
-        <button onclick="download()">Analyze</button>
-        <button onclick="download1()">Advanced Analyze</button>
+        <button onclick="analyze()">Analyze</button>
         <pre id="output"></pre>
     </div>
 
@@ -97,7 +106,7 @@
             });
         }
 
-        function download() {
+        function analyze() {
             const url = document.getElementById('myURL').value;
             fetch(apiUrl + "analyze", {
                 method: "POST",
@@ -113,10 +122,35 @@
                 }
             });
         }
-
-        function download1() {
-            download(); // В текущей версии повторяет функционал download
-        }
     </script>
 </body>
 </html>
+"""
+
+@app.route("/")
+def index():
+    return render_template_string(HTML_TEMPLATE)
+
+@app.route("/validate_key", methods=["POST"])
+def validate_key():
+    data = request.json
+    key = data.get("key", "")
+    return jsonify({"valid": key in AUTHORIZED_KEYS})
+
+@app.route("/analyze", methods=["POST"])
+def analyze():
+    data = request.json
+    url = data.get("url", "")
+    if not url:
+        return jsonify({"error": "URL not provided"}), 400
+
+    try:
+        response = requests.get(url)
+        if "text/html" in response.headers.get("Content-Type", ""):
+            return jsonify({"content": response.text})
+        return jsonify({"error": "The content is not HTML"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == "__main__":
+    app.run(debug=True)
